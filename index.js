@@ -1,19 +1,3 @@
-// const express = require("express");
-// const cors = require("cors");
-
-// const app = express();
-// app.use(cors());
-
-// app.get("/", (req, res) => {
-//   // First Route
-// });
-
-// const PORT = process.env.PORT || 5000;
-
-// app.listen(PORT, () => {
-//   console.log(`Server started at port ${PORT}`);
-// });
-
 import Koa from 'koa';
 import cors from '@koa/cors';
 import render from 'koa-ejs';
