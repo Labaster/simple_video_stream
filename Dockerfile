@@ -27,5 +27,4 @@ COPY --from=build routes routes
 COPY --from=build view view
 COPY --from=build helpers helpers
 
-EXPOSE 3000
-CMD node index.js
+CMD PORT=3000 node index.js
