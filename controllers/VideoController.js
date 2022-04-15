@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-export const streamVideoAction = async (ctx) => {
+export const streamVideoAction = async (ctx, next) => {
   const videoId = ctx.params.videoId;
   const range = ctx.headers.range || '0-';
 

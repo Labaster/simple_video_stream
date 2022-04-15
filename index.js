@@ -3,11 +3,14 @@ import cors from '@koa/cors';
 import render from 'koa-ejs';
 import path from 'path';
 import router from './routes/index.js';
+import serve from 'koa-static';
+import mount from 'koa-mount';
 
 const app = new Koa();
 const __dirname = path.resolve();
 
 app
+  .use(mount('/public', serve(__dirname + '/public')))
   .use(cors())
   .use(router.routes())
   .use(router.allowedMethods());
