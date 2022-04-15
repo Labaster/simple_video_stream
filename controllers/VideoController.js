@@ -1,10 +1,10 @@
 import fs from 'fs';
 
-export const streamVideoAction = async (ctx, next) => {
-  const videoId = ctx.params.videoId;
+export const streamVideoAction = async (ctx) => {
+  const video = ctx.params.video;
   const range = ctx.headers.range || '0-';
 
-  const videoPath = `./videos/${videoId}.mp4`;
+  const videoPath = `./videos/${video}.mp4`;
   const videoSize = fs.statSync(videoPath).size;
   const chunkSize = 10 ** 6;
   const start = Number(range.replace(/\D/g, ''));
