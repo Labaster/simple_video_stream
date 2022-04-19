@@ -12,6 +12,7 @@
     "koa-mount": "^4.0.0",
     "koa-router": "^10.1.1",
     "koa-static": "^5.0.0",
+    "lodash": "^4.17.21",
     "path": "^0.12.7"
   },
   "scripts": {
@@ -19,5 +20,10 @@
     "docker-build": "docker build -t simple_video_stream .",
     "start-production": "docker run -dp 3000:3000 simple_video_stream",
     "docker-stop": "docker stop simple_video_stream"
+  },
+  "devDependencies": {
+    "eslint": "^8.13.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
   }
 }

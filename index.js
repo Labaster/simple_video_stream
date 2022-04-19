@@ -2,21 +2,22 @@ import Koa from 'koa';
 import cors from '@koa/cors';
 import render from 'koa-ejs';
 import path from 'path';
-import router from './routes/index.js';
 import serve from 'koa-static';
 import mount from 'koa-mount';
+// eslint-disable-next-line import/extensions
+import router from './routes/index.js';
 
 const app = new Koa();
-const __dirname = path.resolve();
+const dirname = path.resolve();
 
 app
-  .use(mount('/public', serve(__dirname + '/public')))
+  .use(mount('/public', serve(`${dirname}/public`)))
   .use(cors())
   .use(router.routes())
   .use(router.allowedMethods());
 
 render(app, {
-  root: path.join(__dirname, 'view'),
+  root: path.join(dirname, 'view'),
   layout: 'index',
   viewExt: 'html',
 });
@@ -27,7 +28,7 @@ app.listen(PORT, () => {
 });
 
 process.on('uncaughtException', (err) => {
-  console.error((new Date).toUTCString() + ' uncaughtException:', err.message);
+  console.error(`${(new Date()).toUTCString()} uncaughtException:`, err.message);
   console.error(err.stack);
   process.exit(1);
 });
