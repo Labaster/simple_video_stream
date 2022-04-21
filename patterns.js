@@ -378,3 +378,426 @@ const runBridge = () => {
 };
 
 // runBridge();
+/** ************************************************************ */
+
+/** Composite - allows the creation of objects with properties that are primitive items or a collection of objects. Each item in the collection can hold other collections themselves, creating deeply nested structures */
+
+// Component
+class Employers {
+  constructor(name, position, progress) {
+    this.name = name;
+    this.position = position;
+    this.progress = progress;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getProgress() {}
+}
+
+// Leaf subclass
+class Developers extends Employers {
+  getProgress() {
+    return this.progress;
+  }
+}
+
+// Leaf subclass
+class FreeLanceDev extends Employers {
+  getProgress() {
+    return this.progress;
+  }
+}
+
+// Composite subclass
+class DevTeamLead extends Employers {
+  constructor(name, position) {
+    super(name, position);
+    this.teamMembers = [];
+  }
+
+  addMember(employee) {
+    this.teamMembers.push(employee);
+  }
+
+  removeMember(employee) {
+    for (let i = 0; i < this.teamMembers.length; i += 1) {
+      if (this.teamMembers[i] === employee) {
+        this.teamMembers.splice(i, 1);
+      }
+    }
+    return this.teamMembers;
+  }
+
+  getProgress() {
+    for (let i = 0; i < this.teamMembers.length; i += 1) {
+      console.log(this.teamMembers[i].getProgress());
+    }
+  }
+
+  showTeam() {
+    for (let i = 0; i < this.teamMembers.length; i += 1) {
+      console.log(this.teamMembers[i].name);
+    }
+  }
+}
+
+const runComposite = () => {
+  const seniorDev = new Developers('Rachel', 'Senior Developer', '60%');
+  const juniorDev = new Developers('Joey', 'Junior Developer', '50%');
+  const teamLead = new DevTeamLead('Regina', 'Dev Team Lead', '90%');
+  const freelanceDev = new FreeLanceDev('John', 'Freelance Developer', '80%');
+  teamLead.addMember(seniorDev);
+  teamLead.addMember(juniorDev);
+  teamLead.addMember(freelanceDev);
+
+  console.log('Team members list:');
+  teamLead.showTeam();
+
+  console.log('Get Team members progress:');
+  teamLead.getProgress();
+
+  console.log('Removing Rachel from team:');
+  teamLead.removeMember(seniorDev);
+
+  console.log('Updated team members list:');
+  teamLead.showTeam();
+
+  console.log("Get freelance developer's progress:");
+  console.log(freelanceDev.getProgress());
+};
+
+// runComposite();
+/** ************************************************************ */
+
+/** Decorator - allows to add new functionality to an existing object without altering its structure */
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+
+  say() {
+    console.log(`User: ${this.name}`);
+  }
+}
+
+class DecoratedUser {
+  constructor(user, street, city) {
+    this.user = user;
+    this.name = user.name; // ensures interface stays the same
+    this.street = street;
+    this.city = city;
+  }
+
+  say() {
+    console.log(`Decorated User: ${this.name}, ${this.street}, ${this.city}`);
+  }
+}
+
+const runDecorator = () => {
+  const user = new User('Kelly');
+  user.say();
+  const decorated = new DecoratedUser(user, 'Broadway', 'New York');
+  decorated.say();
+};
+
+// runDecorator();
+/** ************************************************************ */
+
+/** Facade - allows to hide the complexity of a subsystem and provide a simplified interface to the client */
+class Mortgage {
+  constructor({
+    name, BankClass, CreditClass, BackgroundClass,
+  }) {
+    this.name = name;
+    this.bank = new BankClass();
+    this.credit = new CreditClass();
+    this.background = new BackgroundClass();
+
+    this.applyFor = (amount) => {
+      // access multiple subsystems...
+      const result = (
+        !this.bank.verify(this.name, amount)
+        || !this.credit.get(this.name)
+        || !this.background.check(this.name)
+      ) ? 'denied' : 'approved';
+
+      return `${this.name} has been ${result} for a ${amount} mortgage`;
+    };
+  }
+}
+
+class Bank {
+  verify(name, amount) {
+    // complex logic ...
+    return true;
+  }
+}
+
+class Credit {
+  constructor() {
+    this.get = function (name) {
+      // complex logic ...
+      return true;
+    };
+  }
+}
+
+class Background {
+  constructor() {
+    this.check = function (name) {
+      // complex logic ...
+      return false;
+    };
+  }
+}
+
+const runFacade = () => {
+  const mortgage = new Mortgage({
+    name: 'Joan Templeton',
+    BankClass: Bank,
+    CreditClass: Credit,
+    BackgroundClass: Background,
+  });
+  const result = mortgage.applyFor('$100,000');
+
+  console.log(result);
+};
+
+// runFacade();
+/** ************************************************************ */
+
+/** Flyweight - allows to reduce memory footprint by sharing common data between many objects */
+
+class Flyweight {
+  constructor(make, model, processor) {
+    this.make = make;
+    this.model = model;
+    this.processor = processor;
+  }
+}
+
+class FlyWeightFactory {
+  constructor() {
+    this.flyweights = {};
+
+    if (typeof FlyWeightFactory.instance === 'object') return FlyWeightFactory.instance;
+    FlyWeightFactory.instance = this;
+    return FlyWeightFactory.instance;
+  }
+
+  get(make, model, processor) {
+    const key = `${make}-${model}-${processor}`;
+    if (!this.flyweights[key]) this.flyweights[key] = new Flyweight(make, model, processor);
+    return this.flyweights[key];
+  }
+
+  getCount() {
+    return Object.keys(this.flyweights).length;
+  }
+}
+
+class ComputerCollection {
+  constructor(ComputerClass) {
+    this.Computer = ComputerClass;
+    this.computers = {};
+    this.count = 0;
+
+    this.add = (make, model, processor, memory, tag) => {
+      this.computers[tag] = new this.Computer(make, model, processor, memory, tag);
+      this.count += 1;
+    };
+
+    this.get = (tag) => this.computers[tag];
+    this.getCount = () => this.count;
+  }
+}
+
+class Computer {
+  constructor(make, model, processor, memory, tag) {
+    this.flyweight = new FlyWeightFactory().get(make, model, processor);
+    this.memory = memory;
+    this.tag = tag;
+    this.getMake = () => this.flyweight.make;
+  }
+}
+
+const runFlyweight = () => {
+  const computers = new ComputerCollection(Computer);
+
+  computers.add('Dell', 'Studio XPS', 'Intel', '5G', 'Y755P');
+  computers.add('Dell', 'Studio XPS', 'Intel', '6G', 'X997T');
+  computers.add('Dell', 'Studio XPS', 'Intel', '2G', 'U8U80');
+  computers.add('Dell', 'Studio XPS', 'Intel', '2G', 'NT777');
+  computers.add('Dell', 'Studio XPS', 'Intel', '2G', '0J88A');
+  computers.add('HP', 'Envy', 'Intel', '4G', 'CNU883701');
+  computers.add('HP', 'Envy', 'Intel', '2G', 'TXU003283');
+
+  console.log(`Computers: ${computers.getCount()}`);
+  console.log(`Flyweights: ${new FlyWeightFactory().getCount()}`);
+};
+
+// runFlyweight();
+/** ************************************************************ */
+
+/** Proxy - allows to intercept and control access to certain operations */
+class GeoCoder {
+  constructor() {
+    this.coords = {
+      Amsterdam: '52.3700° N, 4.8900° E',
+      London: '51.5171° N, 0.1062° W',
+      Paris: '48.8567° N, 2.3508° E',
+      'New York': '40.7128° N, 74.0060° W',
+      Sydney: '33.8683° S, 151.2086° E',
+      'Cape Town': '-33.9249° S, 18.4241° E',
+      Berlin: '52.5233° N, 13.4127° E',
+    };
+    this.getLatLng = (address = '') => this.coords[address] || 'not found';
+  }
+}
+
+class GeoProxy {
+  constructor() {
+    this.geoCoder = new GeoCoder();
+    this.cache = {};
+
+    this.getLatLng = (address) => {
+      if (this.cache[address]) return this.cache[address];
+
+      const result = this.geoCoder.getLatLng(address);
+      this.cache[address] = result;
+      return result;
+    };
+    this.getCount = () => Object.keys(this.cache).length;
+  }
+}
+
+const runProxy = () => {
+  const geo = new GeoProxy();
+
+  // geolocation requests
+  geo.getLatLng('Paris');
+  geo.getLatLng('London');
+  geo.getLatLng('London');
+  geo.getLatLng('London');
+  geo.getLatLng('London');
+  geo.getLatLng('Amsterdam');
+  geo.getLatLng('Amsterdam');
+  geo.getLatLng('Amsterdam');
+  geo.getLatLng('Amsterdam');
+  geo.getLatLng('London');
+  geo.getLatLng('London');
+
+  console.log(`\nCache size: ${geo.getCount()}`);
+};
+
+// runProxy();
+/** ************************************************************ */
+
+/** Chain of Responsibility - allows to pass a request along a chain of handlers until one of them can handle the request */
+class Request {
+  constructor(amount) {
+    this.amount = amount;
+    console.log(`Requested: $${amount}\n`);
+  }
+
+  get(bill) {
+    const count = Math.floor(this.amount / bill);
+    this.amount -= count * bill;
+    console.log(`Dispense ${count} $${bill} bills`);
+    return this;
+  }
+
+  add(sum) {
+    this.amount += sum;
+    return this;
+  }
+}
+
+const runChain = () => {
+  const request = new Request(378);
+  request
+    .get(100)
+    .get(50)
+    .get(20)
+    .get(10)
+    .add(200)
+    .get(77)
+    .get(5)
+    .get(1);
+};
+
+// runChain();
+/** ************************************************************ */
+
+/** Command - allows to execute an operation at a later time */
+
+const add = (x, y) => x + y;
+const sub = (x, y) => x - y;
+const mul = (x, y) => x * y;
+const div = (x, y) => x / y;
+
+class Command {
+  constructor(execute, undo, value) {
+    this.execute = execute;
+    this.undo = undo;
+    this.value = value;
+  }
+}
+
+const AddCommand = (value) => new Command(add, sub, value);
+
+const SubCommand = (value) => new Command(sub, add, value);
+
+const MulCommand = (value) => new Command(mul, div, value);
+
+const DivCommand = (value) => new Command(div, mul, value);
+
+class Calculator {
+  constructor() {
+    this.current = 0;
+    this.commands = [];
+
+    this.action = (command) => {
+      const name = command.execute.toString().substr(9, 3);
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    };
+    this.execute = (command) => {
+      this.commands.push(command);
+      this.current = command.execute(this.current, command.value);
+      console.log(`${this.action(command)}: ${command.value}`);
+    };
+    this.undo = () => {
+      const command = this.commands.pop();
+      this.current = command.undo(this.current, command.value);
+      console.log(`Undo ${this.action(command)}: ${command.value}`);
+    };
+    this.getCurrentValue = () => this.current;
+  }
+
+  static hello = () => console.log('Hello, World!');
+}
+
+const runCommand = () => {
+  const calculator = new Calculator();
+  console.log(Calculator.hello());
+
+  // issue commands
+  calculator.execute(AddCommand(100));
+  calculator.execute(SubCommand(24));
+  calculator.execute(MulCommand(6));
+  calculator.execute(DivCommand(2));
+  calculator.execute(AddCommand(300));
+
+  // reverse last two commands
+  calculator.undo();
+  calculator.undo();
+
+  console.log(`\nValue: ${calculator.getCurrentValue()}`);
+};
+
+// runCommand();
+/** ************************************************************ */
+
+/** Interpreter - allows to interpret a string as a sequence of commands */
+
+
