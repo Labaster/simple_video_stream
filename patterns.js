@@ -799,5 +799,496 @@ const runCommand = () => {
 /** ************************************************************ */
 
 /** Interpreter - allows to interpret a string as a sequence of commands */
+class Context {
+  constructor(input) {
+    this.input = input;
+    this.output = 0;
+  }
 
+  startsWith(str) {
+    return this.input.substr(0, str.length) === str;
+  }
+}
+
+class Expression {
+  constructor(name, one, four, five, nine, multiplier) {
+    this.name = name;
+    this.one = one;
+    this.four = four;
+    this.five = five;
+    this.nine = nine;
+    this.multiplier = multiplier;
+  }
+
+  operate(context, outNum, inNum) {
+    context.output += (outNum * this.multiplier);
+    context.input = context.input.substr(inNum);
+    return context;
+  }
+
+  interpret(context) {
+    switch (true) {
+      case context.input.length === 0:
+        return;
+      case context.startsWith(this.nine):
+        this.operate(context, 9, 2);
+        break;
+      case context.startsWith(this.four):
+        this.operate(context, 4, 2);
+        break;
+      case context.startsWith(this.five):
+        this.operate(context, 5, 1);
+        break;
+      default: /** nothing to do ... */
+    }
+
+    while (context.startsWith(this.one)) {
+      context.output += (1 * this.multiplier);
+      context.input = context.input.substr(1);
+    }
+  }
+}
+
+const runInterpreter = () => {
+  const roman = 'MCMXXVIIIII';
+  const context = new Context(roman);
+  const tree = [];
+
+  tree.push(new Expression('thousand', 'M', ' ', ' ', ' ', 1000));
+  tree.push(new Expression('hundred', 'C', 'CD', 'D', 'CM', 100));
+  tree.push(new Expression('ten', 'X', 'XL', 'L', 'XC', 10));
+  tree.push(new Expression('one', 'I', 'IV', 'V', 'IX', 1));
+
+  for (let i = 0; i < tree.length; i += 1) tree[i].interpret(context);
+
+  console.log(`${roman} = ${context.output}`);
+};
+
+// runInterpreter();
+/** ************************************************************ */
+
+/** Iterator - allows to iterate over a collection */
+class Iterator {
+  constructor(items) {
+    this.index = 0;
+    this.items = items;
+  }
+
+  first() {
+    this.reset();
+    return this.next();
+  }
+
+  next() {
+    this.index += 1;
+    return this.items[this.index];
+  }
+
+  hasNext() {
+    return this.index <= this.items.length - 1;
+  }
+
+  reset() {
+    this.index = 0;
+  }
+
+  each(func) {
+    for (let item = this.first(); this.hasNext(); item = this.next()) {
+      if (func && item) func(item);
+    }
+  }
+}
+
+
+const runIterator = () => {
+  const items = ['one', 2, 'circle', true, 'Applepie'];
+  const iter = new Iterator(items);
+
+  // using for loop
+  for (let item = iter.first(); iter.hasNext(); item = iter.next()) {
+    console.log(item);
+  }
+  console.log('\n');
+
+  // using Iterator's each method
+  iter.each((item) => console.log(item));
+};
+
+// runIterator();
+/** ************************************************************ */
+
+/** Mediator - allows to communicate between objects without knowledge of their implementation */
+class Participant {
+  constructor(name) {
+    const today = new Date();
+    const date = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    const time = `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+    const dateTime = `${date} ${time}`;
+    this.name = name || `Anonymous_${dateTime}`;
+    this.chatroom = null;
+  }
+
+  send(message, to) {
+    this.chatroom.send(message, this, to);
+  }
+
+  receive(message, from) {
+    console.log(`${from.name} to ${this.name}: ${message}`);
+  }
+}
+
+class Chatroom {
+  constructor() {
+    this.participants = {};
+
+    this.register = (participant) => {
+      const { name } = participant;
+      this.participants[name] = participant;
+      // eslint-disable-next-line no-param-reassign
+      participant.chatroom = this;
+    };
+
+    this.send = (message, from, to) => {
+      if (to) to.receive(message, from); // single message
+      else { // broadcast message
+        const keysArr = Object.keys(this.participants);
+
+        keysArr.forEach((key) => {
+          if (this.participants[key] !== from) this.participants[key].receive(message, from);
+        });
+      }
+    };
+  }
+}
+
+const runMediator = () => {
+  const yoko = new Participant('Yoko');
+  const john = new Participant('John');
+  const paul = new Participant('Paul');
+  const ringo = new Participant('Ringo');
+  const anon = new Participant();
+
+  const chatroom = new Chatroom();
+  chatroom.register(yoko);
+  chatroom.register(john);
+  chatroom.register(paul);
+  chatroom.register(ringo);
+  chatroom.register(anon);
+
+  yoko.send('All you need is love.');
+  yoko.send('I love you John.');
+  john.send('Hey, no need to broadcast', yoko);
+  paul.send('Ha, I heard that!');
+  ringo.send('Paul, what do you think?', paul);
+  anon.send('It is raining now((');
+};
+
+// runMediator();
+/** ************************************************************ */
+
+/** Memento - allows to save and restore the state of an object */
+class Person {
+  constructor(name, street, city, state) {
+    this.name = name;
+    this.street = street;
+    this.city = city;
+    this.state = state;
+  }
+
+  hydrate() {
+    return JSON.stringify(this);
+  }
+
+  dehydrate(memento) {
+    if (memento) {
+      const data = JSON.parse(memento);
+      lodash.each(data, (val, prop) => {
+        this[prop] = val;
+      });
+    }
+  }
+}
+
+class CareTaker {
+  constructor() {
+    this.mementos = {};
+
+    this.add = (memento) => {
+      const key = Object.keys(this.mementos).length;
+      this.mementos[key] = memento;
+      return key;
+    };
+
+    this.get = (key) => this.mementos[key];
+  }
+}
+
+function runMemento() {
+  const mike = new Person('Mike Foley', '1112 Main', 'Dallas', 'TX');
+  const john = new Person('John Wang', '48th Street', 'San Jose', 'CA');
+  const caretaker = new CareTaker();
+
+  // save state
+  const mikeKey = caretaker.add(mike.hydrate());
+  const johnKey = caretaker.add(john.hydrate());
+
+  // mess up their names
+  mike.name = 'King Kong';
+  john.name = 'Superman';
+
+  // restore original state
+  mike.dehydrate(caretaker.get(mikeKey));
+  john.dehydrate(caretaker.get(johnKey));
+
+  console.log(mike.name);
+  console.log(john.name);
+}
+
+// runMemento();
+/** ************************************************************ */
+
+/** Observer - allows to notify other objects about changes in the object */
+class Click {
+  constructor() {
+    this.handlers = []; // observers
+  }
+
+  subscribe(fn) {
+    this.handlers.push(fn);
+  }
+
+  unsubscribe(fn) {
+    this.handlers = this.handlers.filter((item) => item !== fn);
+  }
+
+  fire(o, thisObj) {
+    const scope = thisObj;
+    this.handlers.forEach((item) => item.call(scope, o));
+  }
+}
+
+const runObserver = () => {
+  const clickHandler = (item) => console.log(`fired: ${item}`);
+  const click = new Click();
+
+  click.subscribe(clickHandler);
+  click.fire('event #1');
+  click.unsubscribe(clickHandler);
+  click.fire('event #2');
+  click.subscribe(clickHandler);
+  click.fire('event #3');
+};
+
+// runObserver();
+/** ************************************************************ */
+
+/** State - provides state-specific logic to a limited set of objects in which each object represents a particular state */
+// eslint-disable-next-line no-promise-executor-return
+const timeout = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+class Yellow {
+  constructor(light) {
+    this.light = light;
+
+    this.go = async () => {
+      console.log('Yellow --> for 10 seconds');
+      await timeout(5000);
+      light.change(new Red(light));
+    };
+  }
+}
+
+class Green {
+  constructor(light) {
+    this.light = light;
+
+    this.go = async () => {
+      console.log('Green --> for 1 minute');
+      await timeout(10000);
+      light.change(new Yellow(light));
+    };
+  }
+}
+
+class Red {
+  constructor(light) {
+    this.light = light;
+
+    this.go = async () => {
+      console.log('Red --> for 1 minute');
+      await timeout(10000);
+      light.change(new Green(light));
+    };
+  }
+}
+
+
+
+class TrafficLight {
+  constructor() {
+    this.count = 0;
+    this.currentState = new Red(this);
+
+    this.change = (state) => {
+      this.count += 1;
+
+      // limits number of changes
+      if (this.count >= 10) return;
+      this.currentState = state;
+      this.currentState.go();
+    };
+
+    this.start = () => this.currentState.go();
+  }
+}
+
+const runState = () => {
+  const light = new TrafficLight();
+  light.start();
+};
+
+// runState();
+/** ************************************************************ */
+
+/** Strategy - encapsulates alternative algorithms (or strategies) for a particular task */
+class Shipping {
+  constructor() {
+    this.company = '';
+  }
+
+  setStrategy(company) {
+    this.company = company;
+  }
+
+  calculate(pack) {
+    return this.company.calculate(pack);
+  }
+}
+
+class DeliveryCompanies {
+  constructor() {
+    this.ups = '$45.95';
+    this.usps = '$39.40';
+    this.fedex = '$43.75';
+  }
+
+  calculate(packName) {
+    if (!this[packName]) throw new Error(`Package not provided with name ${packName}`);
+    return this[packName];
+  }
+}
+
+const runStrategy = () => {
+  let compName = 'fedex';
+  const shipping = new Shipping();
+  const delivery = new DeliveryCompanies();
+
+  shipping.setStrategy(delivery);
+  console.log(`${compName} Strategy: ${shipping.calculate(compName)}`);
+  compName = 'ups';
+  console.log(`${compName} Strategy: ${shipping.calculate(compName)}`);
+  compName = 'usps';
+  console.log(`${compName} Strategy: ${shipping.calculate(compName)}`);
+  compName = null;
+  console.log(`${compName} Strategy: ${shipping.calculate(compName)}`);
+};
+
+// runStrategy();
+/** ************************************************************ */
+
+/** Template Method - defines the skeleton of an algorithm in an operation, deferring some steps to subclasses. Template Method lets subclasses redefine certain steps of an algorithm without changing the algorithm's structure. */
+class AbstractClass {
+  constructor() {
+    this.templateMethod = () => {
+      this.connect();
+      this.getData();
+      this.closeConn();
+    };
+  }
+
+  connect() {
+    throw new Error('You must implement this method');
+  }
+
+  getData() {
+    throw new Error('You must implement this method');
+  }
+
+  closeConn() {
+    throw new Error('You must implement this method');
+  }
+}
+
+class DbConnection extends AbstractClass {
+  constructor(db) {
+    super();
+    this.db = db;
+  }
+
+  connect() {
+    console.log(`Connecting to ${this.db}`);
+  }
+
+  getData() {
+    console.log(`Getting data from ${this.db}`);
+  }
+
+  closeConn() {
+    console.log(`Closing connection to ${this.db}`);
+  }
+}
+
+const runTemplateMethod = () => {
+  const db = new DbConnection('MySQL');
+  db.templateMethod();
+
+  const db2 = new DbConnection('MongoDB');
+  db2.templateMethod();
+
+  const db3 = new DbConnection('PostgreSQL');
+  db3.templateMethod();
+};
+
+// runTemplateMethod();
+/** ************************************************************ */
+
+/** Visitor - defines a new operation to a collection of objects without changing the objects themselves */
+class EmployeeVisitor {
+  constructor(name, salary, vacation) {
+    this.name = name;
+    this.salary = salary;
+    this.vacation = vacation;
+
+    this.accept = (visitor) => visitor(this);
+    this.getName = () => this.name;
+    this.getSalary = () => this.salary;
+    // eslint-disable-next-line no-return-assign
+    this.setSalary = (newSalary) => this.salary = newSalary;
+    this.getVacation = () => this.vacation;
+    // eslint-disable-next-line no-return-assign
+    this.setVacation = (newVacation) => this.vacation = newVacation;
+  }
+}
+
+const extraSalary = (emp) => emp.setSalary(emp.getSalary() * 1.1);
+const extraVacation = (emp) => emp.setVacation(emp.getVacation() + 3);
+
+const runVisitor = () => {
+  const employees = [
+    new EmployeeVisitor('John', 10000, 10),
+    new EmployeeVisitor('Mary', 20000, 21),
+    new EmployeeVisitor('Boss', 250000, 51),
+  ];
+
+  for (let i = 0; i < employees.length; i += 1) {
+    const emp = employees[i];
+
+    emp.accept(extraSalary);
+    emp.accept(extraVacation);
+    console.log(`${emp.getName()}: $${emp.getSalary()} and ${emp.getVacation()} vacation days`);
+  }
+};
+
+// runVisitor();
+/** ************************************************************ */
 
